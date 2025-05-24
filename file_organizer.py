@@ -2,45 +2,52 @@ import os
 import shutil
 
 FILE_TYPES = {
-    "Documents": [".pdf", ".doc", ".docx", ".txt", ".xls", ".xlsx", ".ppt", ".pptx"],
-    "Images": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg"],
+    "Documents":[".pdf", ".doc", ".docx", ".txt", ".xls", ".xlsx", ".ppt", ".pptx"],
+    "Images":[".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg"],
     "Videos": [".mp4", ".avi", ".mov", ".mkv", ".webm"],
-    "Audios": [".mp3", ".wav", ".aac", ".flac", ".ogg"],
-    "Programming": [".py", ".java", ".cpp", ".c", ".cs", ".js", ".ts", ".rb", ".go", ".php"],
-    "WebFiles": [".html", ".css", ".js", ".json", ".xml"],
-    "Archives": [".zip", ".rar", ".tar", ".gz", ".7z"],
-    "Executables": [".exe", ".msi", ".sh", ".bat", ".apk"],
-    "Others": []
+    "Audios": [".mp3", ".wav",  ".aac", ".flac", ".ogg"],
+    "Programming": [".py",  ".java", ".cpp", ".c", ".cs", ".js", ".ts", ".rb", ".go", ".php"],
+    "WebFiles":[".html", ".css", ".js", ".json", ".xml"],
+    "Archives": [".zip", ".rar",".tar", ".gz", ".7z"],
+    "Executables": [".exe",".msi", ".sh", ".bat", ".apk"],
+    "Others":[]
 }
 
-def create_folders(base_path):
+def create_category_folders(path):
     for category in FILE_TYPES:
-        folder_path = os.path.join(base_path, category)
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
+        folder =os.path.join(path, category)
+        try:
+            os.makedirs(folder, exist_ok=True)
+        except Exception as e:
+            print(f"Couldn't create folder '{folder}': {e}")
 
-def find_category(filename):
-    _, ext = os.path.splitext(filename.lower())
+def get_file_category(filename):
+    _, ext =os.path.splitext(filename.lower())
     for category, extensions in FILE_TYPES.items():
         if ext in extensions:
             return category
     return "Others"
 
-def organize_files(base_path):
-    create_folders(base_path)
-    for item in os.listdir(base_path):
-        full_path = os.path.join(base_path, item)
-        if os.path.isfile(full_path):
-            category = find_category(item)
-            destination_folder = os.path.join(base_path, category)
-            destination_path = os.path.join(destination_folder, item)
-            if not os.path.exists(destination_path):
-                shutil.move(full_path, destination_path)
+def organize_files_in_folder(path):
+    create_category_folders(path)
+    try:
+        for item in os.listdir(path):
+            item_path =os.path.join(path, item)
+            if os.path.isfile(item_path):
+                category  = get_file_category(item)
+                dest_folder= os.path.join(path, category)
+                dest_path =  os.path.join(dest_folder, item)
+                try:
+                    shutil.move(item_path, dest_path)
+                except Exception as move_err:
+                    print(f"Error moving '{item}' to '{category}': {move_err}")
+    except Exception as err:
+        print (f"Something went wrong while organizing files: {err}")
 
-if __name__ == "__main__":
-    user_path = input("Enter the path of the folder to organize: ").strip()
-    if os.path.isdir(user_path):
-        organize_files(user_path)
-        print("Files organized.")
+if __name__ =="__main__":
+    folder = input("Enter the folder path to organize: ").strip()
+    if not os.path.isdir(folder):
+        print("That path doesn't seem to be valid. Please check and try again.")
     else:
-        print("Invalid path.")
+        organize_files_in_folder(folder)
+        print("All set! Your files have been organized.")
