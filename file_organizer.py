@@ -29,10 +29,10 @@ def classify_file(file):
     ext = file.suffix.lower()
     if not ext:
         return "no_extension"
-    for category, extensions in FILE_TYPES.items():
-        if ext in extensions:
+    for category, exts in FILE_TYPES.items():
+        if ext in exts:
             return category
-    return ext.lstrip(".")
+    return "Others"
 
 def organize_folder(folder):
     if not folder.exists() or not folder.is_dir():
@@ -41,44 +41,38 @@ def organize_folder(folder):
         return
 
     moved = 0
-
     for file in folder.iterdir():
-        if file.is_file():
-            category = classify_file(file)
-            target = folder / category
+        if file.name.startswith(('.', '$')) or not file.is_file():
+            continue
 
-            if not target.exists():
-                try:
-                    target.mkdir()
-                    logging.info(f"Created folder: {category}")
-                except Exception as e:
-                    logging.error(f"Could not create folder '{category}': {e}")
-                    continue
+        category = classify_file(file)
+        target_dir = folder / category
+        target_dir.mkdir(exist_ok=True)
 
-            destination = target / file.name
-            try:
-                if not destination.exists():
-                    shutil.move(str(file), str(destination))
-                    moved += 1
-                    logging.info(f"Moved '{file.name}' to '{category}/'")
-                else:
-                    logging.warning(f"Skipped '{file.name}' (already exists in '{category}/')")
-            except Exception as e:
-                logging.error(f"Error moving '{file.name}': {e}")
+        dest = target_dir / file.name
+        try:
+            if not dest.exists():
+                shutil.move(str(file), str(dest))
+                logging.info(f"Moved '{file.name}' to '{category}/'")
+                moved += 1
+            else:
+                logging.warning(f"Skipped '{file.name}' (already exists in '{category}/')")
+        except Exception as e:
+            logging.error(f"Error moving '{file.name}': {e}")
 
     print(f"Done. Moved {moved} file(s).")
     logging.info("Organization complete.")
 
 def main():
     parser = argparse.ArgumentParser(description="Simple File Organizer")
-    parser.add_argument('--path', required=True, help="Path to the folder to organize")
-    parser.add_argument('--log', default="organizer.log", help="Log file name")
+    parser.add_argument('--path', required=True, help="Folder to organize")
+    parser.add_argument('--log', default="organizer.log", help="Log file")
 
     args = parser.parse_args()
-    folder_path = Path(args.path).resolve()
+    folder = Path(args.path).resolve()
 
     init_logging(args.log)
-    organize_folder(folder_path)
+    organize_folder(folder)
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()
