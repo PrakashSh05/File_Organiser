@@ -2,64 +2,83 @@ import os
 import shutil
 import logging
 from pathlib import Path
+import argparse
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("organizer.log", encoding="utf-8")]
-)
-
-FILE_CATEGORIES = {
-    "Documents": [".pdf", ".doc", ".docx", ".txt", ".xls",  ".xlsx", ".ppt", ".pptx"],
-    "Images":[".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg"],
-    "Videos":[".mp4", ".avi", ".mov", ".mkv",  ".webm"],
+FILE_TYPES = {
+    "Documents": [".pdf", ".doc", ".docx", ".txt", ".xls", ".xlsx", ".ppt", ".pptx"],
+    "Images": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg"],
+    "Videos": [".mp4", ".avi", ".mov", ".mkv", ".webm"],
     "Audios": [".mp3", ".wav", ".aac", ".flac", ".ogg"],
-    "Programming":[".py", ".java", ".cpp", ".c",  ".cs", ".js", ".ts", ".rb", ".go", ".php"],
-    "WebFiles":[".html", ".css", ".js", ".json", ".xml"],
-    "Archives":[".zip", ".rar", ".tar", ".gz", ".7z"],
-    "Executables": [".exe", ".msi", ".sh", ".bat", ".apk"],
-    "Others": []
+    "Programming": [".py", ".java", ".cpp", ".c", ".cs", ".js", ".ts", ".rb", ".go", ".php"],
+    "WebFiles": [".html", ".css", ".js", ".json", ".xml"],
+    "Archives": [".zip", ".rar", ".tar", ".gz", ".7z"],
+    "Executables": [".exe", ".msi", ".sh", ".bat", ".apk"]
 }
 
-def create_category_folders(base_path):
-    for category in FILE_CATEGORIES:
-        try:
-            (base_path /category).mkdir(exist_ok=True)
-        except Exception as e:
-            print (f"Error creating folder'{category}': {e}")
-            logging.error(f"Error creating folder '{category}':{e}")
+def init_logging(log_path="organizer.log"):
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.FileHandler(log_path, encoding="utf-8"),
+            logging.StreamHandler()
+        ]
+    )
 
-def get_file_category(file_name):
-    return next((cat for cat, ext in FILE_CATEGORIES.items () if file_name.suffix.lower() in ext), "Others")
+def classify_file(file):
+    ext = file.suffix.lower()
+    if not ext:
+        return "no_extension"
+    for category, extensions in FILE_TYPES.items():
+        if ext in extensions:
+            return category
+    return ext.lstrip(".")
 
-def organize_files(base_path):
-    try:
-        create_category_folders(base_path)
-        for item in base_path.iterdir():
-            if item.is_file():
-                category = get_file_category(item)
-                target = base_path / category / item.name
+def organize_folder(folder):
+    if not folder.exists() or not folder.is_dir():
+        logging.error("Invalid folder path.")
+        print("Invalid folder path.")
+        return
+
+    moved = 0
+
+    for file in folder.iterdir():
+        if file.is_file():
+            category = classify_file(file)
+            target = folder / category
+
+            if not target.exists():
                 try:
-                    if not target.exists():
-                        shutil.move(str(item), str(target))
-                        logging.info (f"Moved '{item.name}' → {category}")
-                    else:
-                        logging.warning(f"Skipped '{item.name}' (already exists in '{category}')")
-                except Exception as e :
-                    print (f"Problem moving '{item.name}': {e}")
-                    logging.error(f"Failed to move '{item.name}': {e}")
-        print("Done! Files have been sorted.")
-        logging.info("Organization finished successfully.")
-    except Exception as e:
-        print(f"Something went wrong:{e}")
-        logging.error (f"Unexpected error: {e}")
+                    target.mkdir()
+                    logging.info(f"Created folder: {category}")
+                except Exception as e:
+                    logging.error(f"Could not create folder '{category}': {e}")
+                    continue
 
-if __name__ == "__main__" :
-    folder_path = input("Enter the path of the folder you want to organize: ").strip()
-    path =Path(folder_path)
+            destination = target / file.name
+            try:
+                if not destination.exists():
+                    shutil.move(str(file), str(destination))
+                    moved += 1
+                    logging.info(f"Moved '{file.name}' to '{category}/'")
+                else:
+                    logging.warning(f"Skipped '{file.name}' (already exists in '{category}/')")
+            except Exception as e:
+                logging.error(f"Error moving '{file.name}': {e}")
 
-    if not path.exists() or not path.is_dir():
-        print ("Invalid folder path. Please check and try again.")
-    else:
-        organize_files(path)
+    print(f"Done. Moved {moved} file(s).")
+    logging.info("Organization complete.")
+
+def main():
+    parser = argparse.ArgumentParser(description="Simple File Organizer")
+    parser.add_argument('--path', required=True, help="Path to the folder to organize")
+    parser.add_argument('--log', default="organizer.log", help="Log file name")
+
+    args = parser.parse_args()
+    folder_path = Path(args.path).resolve()
+
+    init_logging(args.log)
+    organize_folder(folder_path)
+
+if __name__ == "__main__":
+    main()
