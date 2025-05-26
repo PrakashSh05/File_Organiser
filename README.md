@@ -34,11 +34,11 @@ Language: Python 3
 
 Libraries Used:
 
-os – Interact with the operating system
-shutil – Move files between directories
-pathlib – Modern file path handling
-logging – Track file operations
-argparse – Command-line interface
+1. os – Interact with the operating system
+2. shutil – Move files between directories
+3. pathlib – Modern file path handling
+4. logging – Track file operations
+5. argparse – Command-line interface
 
 📦 Installation
 1. Clone this repository:
@@ -59,6 +59,7 @@ Given a cluttered Downloads/ folder:
 bash- python organizer.py --path ~/Downloads
 
 📁 After execution, the structure will look like:
+```
 Downloads/
  ┣ Documents/
  ┃ ┗ resume.docx
@@ -70,12 +71,12 @@ Downloads/
  ┃ ┗ script.py
  ┣ Others/
  ┃ ┗ unknown.xyz
-
+```
 📓 Logging
 A .log file will be created to track all file movements:
-2025-05-27 11:15:00 - INFO - Moved 'resume.docx' to 'Documents/'
-2025-05-27 11:15:01 - WARNING - Skipped 'photo.jpg' (already exists in 'Images/')
-2025-05-27 11:15:02 - ERROR - Error moving 'demo.mp4': [Errno 13] Permission denied
+- 2025-05-27 11:15:00 - INFO - Moved 'resume.docx' to 'Documents/'
+- 2025-05-27 11:15:01 - WARNING - Skipped 'photo.jpg' (already exists in 'Images/')
+- 2025-05-27 11:15:02 - ERROR - Error moving 'demo.mp4': [Errno 13] Permission denied
 
 💡 Future Enhancements
 1. Integrate GUI using Tkinter or PyQt
